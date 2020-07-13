@@ -61,7 +61,7 @@ def libaryCombie(debug=False):
             for i, area in enumerate(newKeyInfo):
                 checkCity = area['縣市別']
                 if lib[cityKey].split(' ')[0] in checkCity:
-                    print(lib[cityKey].split(' ')[0])
+                    #print(lib[cityKey].split(' ')[0])
                     newKeyInfo[i][putKey].append(lib)
                 if checkCity == "2019-全國":
                     newKeyInfo[i]['allLibary'].append(lib)
