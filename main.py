@@ -4,6 +4,8 @@ from flask_cors import CORS
 import json
 import requests
 import datetime
+import requests.packages.urllib3
+requests.packages.urllib3.disable_warnings()
 from plugin import processSpecial as PS
 #from plugin import processSpecial
 app = Flask(__name__)
@@ -90,4 +92,4 @@ def test():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,host="0.0.0.0",port=1125)
