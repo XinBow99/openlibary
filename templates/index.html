@@ -13,12 +13,14 @@
         crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
 </head>
 
 <body>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
-        integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
-        crossorigin="" />
     <style>
         html,
         body {
@@ -53,15 +55,8 @@
                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         縣市
                     </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="#">
-                            <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="option1">
-                            <label class="form-check-label" for="inlineCheckbox1">1</label>
-                        </a>
-                        <a class="dropdown-item" href="#">
-                            <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="option1">
-                            <label class="form-check-label" for="inlineCheckbox1">2</label>
-                        </a>
+                    <div id="citys" class="dropdown-menu" aria-labelledby="navbarDropdown">
+
                     </div>
                 </li>
                 <li class="nav-item dropdown">
@@ -84,20 +79,125 @@
         </div>
     </nav>
     <div id="map"></div>
-    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
-        integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
-        crossorigin=""></script>
     <script>
-        var map;
+        //定義MAP
+        let map;
         map = L.map('map').setView([23.546162, 120.6402133], 8);
-
+        //加入圖層
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '<a href="https://www.openstreetmap.org/">OSM</a>',
             maxZoom: 18,
         }).addTo(map);
-        $.getJSON('/location', function (r) {
-            L.geoJSON(r, { color: '#333', weight: 0.7 }).addTo(map);
-        })
+        //測試MARKER
+        //這方選是給建置MARKER用的
+        let markers = {};
+        function makeMarker(sourceMap, data, action) {
+            if (action == 3) {
+                let locate = [data["緯度"], data["經度"]];
+                let marker = L.marker(locate, {
+                    icon: L.icon({
+                        iconUrl: "{{url_for('static', filename='images/libarys.png')}}",
+                    }),
+                    fileNo: data["電話"],
+                    type: "libary",
+                });
+                markers[data["圖書館名稱"]] =  marker;
+            }
+            if (action == 1) {
+                sourceMap.addLayer(markers[data["圖書館名稱"]]);
+            } else if (action == 0) {
+                sourceMap.removeLayer(markers[data["圖書館名稱"]]);
+            } else {
+                //新增MARKER觸發
+                markers[data["圖書館名稱"]].on('click', function () {
+                    Swal.mixin({
+                        width: 600,
+                        padding: '3em',
+                        background: '#fff url(https://sweetalert2.github.io/images/trees.png)',
+                        showCancelButton: true,
+                        progressSteps: ['C'],
+                        backdrop: `
+                                    rgba(0,0,123,0.4)
+                                    url(` + data.representImage + `)
+                                    center
+                                    no-repeat
+                                `
+                    }).queue([
+                        {
+                            title: data["圖書館名稱"],
+                            text: data["簡介"],
+                        }
+                    ])
+                });
+            }
+
+        }
+        //我要開始執行了喔
+        $.getJSON('/getSchools', function (apiData) {
+            console.log(apiData.status);
+            let water = {};
+            apiData.data.map(
+                school => {
+                    let city = school["地址"].advance.locate.baddr2;
+                    let area = school["地址"].advance.locate.bname2;
+                    if (!water[city]) {
+                        water[city] = {};//創建城市
+                    } else if (!water[city][area]) {//不存在區域
+                        water[city][area] = 0;//創建區域
+                    }
+                    water[city][area]++;
+                    if (water[city][area] < 5) {
+                        //makeMarker(map, school);
+                    }
+                }
+            )
+        });
+        let libaryDatas = {};
+        let cityWord = "";
+        function showClick() {
+            cityWord = "";
+            $('input:checkbox:checked[name="citycheck"]').each(
+                function () {
+                    cityWord += this.value + ",";
+                }
+            );
+            libaryDatas.data.map(lbs => {
+                if (cityWord.indexOf(lbs["縣市別"]) > -1) {
+                    lbs.publicLibary.map(
+                        lb => {
+                            makeMarker(map, lb, 1);
+                        }
+                    )
+                } else {
+                    lbs.publicLibary.map(
+                        lb => {
+                            makeMarker(map, lb, 0);
+                        }
+                    )
+                }
+            });
+        }
+        $.getJSON('/getLibary', function (apiData) {
+            console.log(apiData.status);
+            libaryDatas = apiData;
+            let water = {};
+            apiData.data.map(
+                d => {
+                    let city = d["縣市別"];
+                    $("#citys").append(`
+                        <a class="dropdown-item" href="#">
+                            <input class="form-check-input" type="checkbox" name="citycheck" value="`+ city + `" onclick="showClick()">
+                            <label class="form-check-label" for="citycheck">` + city + `</label>
+                        </a>
+                    `);
+                    d.publicLibary.map(
+                        lb => {
+                            makeMarker(map, lb, 3);
+                        }
+                    )
+                }
+            )
+        });
     </script>
 </body>
 

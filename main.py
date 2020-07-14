@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 from plugin import processSpecial as PS
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, url_for
 from flask_cors import CORS
 import json
 import requests
