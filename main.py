@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+from plugin import processSpecial as PS
 from flask import Flask, render_template, Response
 from flask_cors import CORS
 import json
@@ -6,7 +7,6 @@ import requests
 import datetime
 import requests.packages.urllib3
 requests.packages.urllib3.disable_warnings()
-from plugin import processSpecial as PS
 #from plugin import processSpecial
 app = Flask(__name__)
 CORS(app)
@@ -25,7 +25,6 @@ def get_location():
     }
     j = requests.get(
         'https://www.nlpi.edu.tw/opendata/da08aaaf-7edd-461d-a645-3039f840a1a8', verify=False)
-
     for l in j.json():
         if l['經度'] != '' and l['緯度'] != '':
             r['features'].append(
@@ -92,4 +91,4 @@ def test():
 
 
 if __name__ == "__main__":
-    app.run(debug=True,host="0.0.0.0",port=1125)
+    app.run(debug=True, host="0.0.0.0", port=1125)
