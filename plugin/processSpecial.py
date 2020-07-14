@@ -1,4 +1,9 @@
 from plugin import urlConfig
+import requests
+import re
+import json
+# from plugin
+
 
 def allCombine(debug=False):
     pass
@@ -71,6 +76,12 @@ def libaryCombie(debug=False):
 
     print("全國書館合併完成")
     return newKeyInfo
+
+
+def getConvertJson():
+    o = open('jsonFiles/convertSchool.json', 'r', encoding='utf8')
+
+    return json.loads(o.read())
 
 
 def schoolCombine(debug=False):
@@ -148,11 +159,25 @@ def schoolCombine(debug=False):
                     {'isLoseResource': flag}
                 )
                 schools.append(s)
-    print(len(schools))
+    o = open('convert.json', 'w', encoding='utf8')
+    jsons = open('jsonFiles/schoolsNumber1.json', 'r',
+                 encoding="utf8").read().split('\n')
+    for i, school in enumerate(schools):
+        school['地址'] = {
+            'simple': school['地址'],
+            'advance': json.loads(jsons[i])
+        }
+        # print(school['地址'])
+
+    o.write(
+        json.dumps(
+            schools,
+            ensure_ascii=False
+        )
+    )
     return schools
 
 
 if __name__ == "__main__":
     schoolCombine()
-    universityLibary(True)
-    # libaryCombie(True)
+    # outPutNewJson("新北市石碇區北宜路五段坑內巷1號")

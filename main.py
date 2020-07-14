@@ -69,7 +69,7 @@ def getLibary():
 
 @app.route('/getSchools')
 def getSchools():
-    data = PS.schoolCombine()
+    data = PS.getConvertJson()
     r = {
         'status': '200',
         'time': str(datetime.datetime.now()),
