@@ -120,25 +120,75 @@
     <!--這邊給圖書館用的＝＝-->
     <script>
         let libMarkers = {};
+        let idd = 0;
         function libaryMarker(sourceMap, data, action) {
             if (action == 3) {
                 let locate = [data["緯度"], data["經度"]];
-                let marker = L.marker(locate, {
+                let marker = new L.marker(locate, {
                     icon: L.icon({
                         iconUrl: "{{url_for('static', filename='images/libarys.png')}}",
                     }),
-                    fileNo: data["電話"],
+                    fileNo: idd,
                     type: "libary",
                 });
+                idd++;
                 libMarkers[data["圖書館名稱"]] = marker;
+                //新增MARKER觸發
+                libMarkers[data["圖書館名稱"]].on('click', function () {
+                    Swal.mixin({
+                        width: 600,
+                        padding: '3em',
+                        background: '#fff url(https://sweetalert2.github.io/images/trees.png)',
+                        showCancelButton: true,
+                        progressSteps: ['C'],
+                        backdrop: `
+                                    rgba(0,0,123,0.4)
+                                    center
+                                    no-repeat
+                                `
+                    }).queue([
+                        {
+                            title: data["圖書館名稱"],
+                            text: data["簡介"],
+                        }
+                    ])
+                });
             }
             if (action == 1) {
+                console.log('test');
                 sourceMap.addLayer(libMarkers[data["圖書館名稱"]]);
             } else if (action == 0) {
                 sourceMap.removeLayer(libMarkers[data["圖書館名稱"]]);
             } else {
-                //新增MARKER觸發
-                libMarkers[data["圖書館名稱"]].on('click', function () {
+
+            }
+
+        }
+        function specialLibaryMarker(sourceMap, data, action) {
+
+            if (action == 3) {
+                if (data.latitude == undefined) {
+                    data.latitude = "23.546162";
+                    data.name += data.name + '沒有正確座標';
+                }
+                if (data.longitude == undefined) {
+                    data.longitude = "120.6402133";
+                }
+                
+                let locate = [data.latitude, data.longitude];
+                
+                let marker = L.marker(locate, {
+                    icon: L.icon({
+                        iconUrl: "{{url_for('static', filename='images/special.png')}}",
+                    }),
+                    fileNo: idd,
+                    type: "specailLibary",
+                    zIndexOffset: 1000
+                });
+                console.log(locate,data,marker);
+                idd++;
+                libMarkers[data.name + 'special'] = marker;
+                libMarkers[data.name + 'special'].on('click', function () {
                     Swal.mixin({
                         width: 600,
                         padding: '3em',
@@ -153,63 +203,18 @@
                                 `
                     }).queue([
                         {
-                            title: data["圖書館名稱"],
-                            text: data["簡介"],
+                            title: data.name,
+                            text: data.intro,
                         }
                     ])
                 });
-            }
-
-        }
-        function specialLibaryMarker(sourceMap, data, action) {
-            if (action == 3) {
-                try {
-                    let locate = [data.latitude, data.longitude];
-                    let marker = L.marker(locate, {
-                        icon: L.icon({
-                            iconUrl: "{{url_for('static', filename='images/special.png')}}",
-                        }),
-                        fileNo: data.phone,
-                        type: "specailLibary",
-                        zIndexOffset: 1000
-                    });
-                    libMarkers[data.name] = marker;
-                    libMarkers[data.name].on('click', function () {
-                        Swal.mixin({
-                            width: 600,
-                            padding: '3em',
-                            background: '#fff url(https://sweetalert2.github.io/images/trees.png)',
-                            showCancelButton: true,
-                            progressSteps: ['C'],
-                            backdrop: `
-                                    rgba(0,0,123,0.4)
-                                    url(` + data.representImage + `)
-                                    center
-                                    no-repeat
-                                `
-                        }).queue([
-                            {
-                                title: data.name,
-                                text: data.intro,
-                            }
-                        ])
-                    });
-                } catch (error) {
-
-                }
 
             }
             if (action == 1) {
-                sourceMap.addLayer(libMarkers[data.name]);
+                sourceMap.addLayer(libMarkers[data.name + 'special']);
             } else if (action == 0) {
-                sourceMap.removeLayer(libMarkers[data.name]);
+                sourceMap.removeLayer(libMarkers[data.name + 'special']);
             } else {
-                //新增MARKER觸發
-                try {
-
-                } catch{
-
-                }
             }
 
         }
@@ -225,20 +230,42 @@
                     libCityWord += this.value + ",";
                 }
             );
-            libaryDatas.data.map(lbs => {
+            for (let libIndex = 0; libIndex < libaryDatas.data.length; libIndex++) {
+                if (libCityWord.indexOf(libaryDatas.data[libIndex]["縣市別"]) > -1) {
+                    for (let lbIndex = 0; lbIndex < libaryDatas.data[libIndex].publicLibary.length; lbIndex++) {
+                        libaryMarker(map, libaryDatas.data[libIndex].publicLibary[lbIndex], 1);
+                    }
+                } else {
+                    for (let lbIndex = 0; lbIndex < libaryDatas.data[libIndex].publicLibary.length; lbIndex++) {
+                        libaryMarker(map, libaryDatas.data[libIndex].publicLibary[lbIndex], 0);
+                    }
+                }
+                /*
+                if (libCityWord.indexOf(libaryDatas.data[libIndex]["縣市別"]) > -1) {
+                    for (let lbIndex = 0; lbIndex < libaryDatas.data[libIndex].specialLibary.length; lbIndex++) {
+                        libaryMarker(map, libaryDatas.data[libIndex].specialLibary[lbIndex], 1);
+                    }
+                } else {
+                    for (let lbIndex = 0; lbIndex < libaryDatas.data[libIndex].specialLibary.length; lbIndex++) {
+                        libaryMarker(map, libaryDatas.data[libIndex].specialLibary[lbIndex], 0);
+                    }
+                }
+                */
+            }
+            /*ibaryDatas.data.map(lbs => {
                 if (libCityWord.indexOf(lbs["縣市別"]) > -1) {
-
-                    lbs.specialLibary.map(
-                        lb => {
-                            specialLibaryMarker(map, lb, 1);
-                        }
-                    )
+ 
                     lbs.publicLibary.map(
                         lb => {
                             libaryMarker(map, lb, 1);
                         }
                     )
-
+                    lbs.specialLibary.map(
+                        lb => {
+                            specialLibaryMarker(map, lb, 1);
+                        }
+                    )
+ 
                 } else {
                     lbs.publicLibary.map(
                         lb => {
@@ -251,7 +278,7 @@
                         }
                     )
                 }
-            });
+            });*/
         }
         $.getJSON('/getLibary', function (apiData) {
             console.log(apiData.status);
@@ -273,17 +300,23 @@
                                 libaryMarker(map, lb, 3);
                             }
                         )
-                        d.specialLibary.map(
-                            lb => {
-                                specialLibaryMarker(map, lb, 3);
-                            }
-                        )
+
+                        try {
+                            d.specialLibary.map(
+                                lb => {
+                                    specialLibaryMarker(map, lb, 3);
+                                }
+                            )
+                        } catch{
+
+                        }
                     }
                 }
             )
         });
     </script>
     <!--這邊是要給顯示學校用的-->
+    /*
     <script>
         let schoolMarkers = {};
         function schoolMarker(sourceMap, data, action) {
@@ -397,7 +430,7 @@
             )
         });
 
-    </script>
+    </script>*/
 </body>
 
 </html>
