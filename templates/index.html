@@ -47,26 +47,53 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        縣市圖書館
+                    </a>
+                    <div id="citys" class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    </div>
+                </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Link</a>
+                    <a class="nav-link dropdown">
+                        ｜
+                    </a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        縣市
+                        縣市學校
                     </a>
-                    <div id="citys" class="dropdown-menu" aria-labelledby="navbarDropdown">
-
+                    <div id="schools" class=" dropdown-menu" aria-labelledby="navbarDropdown">
                     </div>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        圖書館類別
+                        學校等級
                     </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
+                    <div id="schoolLevel" class=" dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="#">
+                            <input class="form-check-input" type="checkbox" name="schoolLevelCheck" value="國小"
+                                onclick="showNormalschool()">
+                            <label class="form-check-label" for="schoolLevelCheck">國小</label>
+                        </a>
+                        <a class="dropdown-item" href="#">
+                            <input class="form-check-input" type="checkbox" name="schoolLevelCheck" value="國中"
+                                onclick="showNormalschool()">
+                            <label class="form-check-label" for="schoolLevelCheck">國中</label>
+                        </a>
+                        <a class="dropdown-item" href="#">
+                            <input class="form-check-input" type="checkbox" name="schoolLevelCheck" value="高中職"
+                                onclick="showNormalschool()">
+                            <label class="form-check-label" for="schoolLevelCheck">高中</label>
+                        </a>
+                        <a class="dropdown-item" href="#">
+                            <input class="form-check-input" type="checkbox" name="schoolLevelCheck" value="大學"
+                                onclick="showNormalschool()" CHECKED>
+                            <label class="form-check-label" for="schoolLevelCheck">大專院校</label>
+                        </a>
                     </div>
                 </li>
             </ul>
@@ -79,6 +106,7 @@
         </div>
     </nav>
     <div id="map"></div>
+    <!--這邊要定義map啦-->
     <script>
         //定義MAP
         let map;
@@ -88,10 +116,11 @@
             attribution: '<a href="https://www.openstreetmap.org/">OSM</a>',
             maxZoom: 18,
         }).addTo(map);
-        //測試MARKER
-        //這方選是給建置MARKER用的
-        let markers = {};
-        function makeMarker(sourceMap, data, action) {
+    </script>
+    <!--這邊給圖書館用的＝＝-->
+    <script>
+        let libMarkers = {};
+        function libaryMarker(sourceMap, data, action) {
             if (action == 3) {
                 let locate = [data["緯度"], data["經度"]];
                 let marker = L.marker(locate, {
@@ -101,15 +130,15 @@
                     fileNo: data["電話"],
                     type: "libary",
                 });
-                markers[data["圖書館名稱"]] =  marker;
+                libMarkers[data["圖書館名稱"]] = marker;
             }
             if (action == 1) {
-                sourceMap.addLayer(markers[data["圖書館名稱"]]);
+                sourceMap.addLayer(libMarkers[data["圖書館名稱"]]);
             } else if (action == 0) {
-                sourceMap.removeLayer(markers[data["圖書館名稱"]]);
+                sourceMap.removeLayer(libMarkers[data["圖書館名稱"]]);
             } else {
                 //新增MARKER觸發
-                markers[data["圖書館名稱"]].on('click', function () {
+                libMarkers[data["圖書館名稱"]].on('click', function () {
                     Swal.mixin({
                         width: 600,
                         padding: '3em',
@@ -132,46 +161,93 @@
             }
 
         }
-        //我要開始執行了喔
-        $.getJSON('/getSchools', function (apiData) {
-            console.log(apiData.status);
-            let water = {};
-            apiData.data.map(
-                school => {
-                    let city = school["地址"].advance.locate.baddr2;
-                    let area = school["地址"].advance.locate.bname2;
-                    if (!water[city]) {
-                        water[city] = {};//創建城市
-                    } else if (!water[city][area]) {//不存在區域
-                        water[city][area] = 0;//創建區域
-                    }
-                    water[city][area]++;
-                    if (water[city][area] < 5) {
-                        //makeMarker(map, school);
-                    }
+        function specialLibaryMarker(sourceMap, data, action) {
+            if (action == 3) {
+                try {
+                    let locate = [data.latitude, data.longitude];
+                    let marker = L.marker(locate, {
+                        icon: L.icon({
+                            iconUrl: "{{url_for('static', filename='images/special.png')}}",
+                        }),
+                        fileNo: data.phone,
+                        type: "specailLibary",
+                        zIndexOffset: 1000
+                    });
+                    libMarkers[data.name] = marker;
+                    libMarkers[data.name].on('click', function () {
+                        Swal.mixin({
+                            width: 600,
+                            padding: '3em',
+                            background: '#fff url(https://sweetalert2.github.io/images/trees.png)',
+                            showCancelButton: true,
+                            progressSteps: ['C'],
+                            backdrop: `
+                                    rgba(0,0,123,0.4)
+                                    url(` + data.representImage + `)
+                                    center
+                                    no-repeat
+                                `
+                        }).queue([
+                            {
+                                title: data.name,
+                                text: data.intro,
+                            }
+                        ])
+                    });
+                } catch (error) {
+
                 }
-            )
-        });
+
+            }
+            if (action == 1) {
+                sourceMap.addLayer(libMarkers[data.name]);
+            } else if (action == 0) {
+                sourceMap.removeLayer(libMarkers[data.name]);
+            } else {
+                //新增MARKER觸發
+                try {
+
+                } catch{
+
+                }
+            }
+
+        }
+
+        //我要開始執行了喔
         let libaryDatas = {};
-        let cityWord = "";
-        function showClick() {
-            cityWord = "";
-            $('input:checkbox:checked[name="citycheck"]').each(
+        let libCityWord = "";
+        //看普通圖書館
+        function showNormalLibary() {
+            libCityWord = "";
+            $('input:checkbox:checked[name="libaryCityCheck"]').each(
                 function () {
-                    cityWord += this.value + ",";
+                    libCityWord += this.value + ",";
                 }
             );
             libaryDatas.data.map(lbs => {
-                if (cityWord.indexOf(lbs["縣市別"]) > -1) {
-                    lbs.publicLibary.map(
+                if (libCityWord.indexOf(lbs["縣市別"]) > -1) {
+
+                    lbs.specialLibary.map(
                         lb => {
-                            makeMarker(map, lb, 1);
+                            specialLibaryMarker(map, lb, 1);
                         }
                     )
+                    lbs.publicLibary.map(
+                        lb => {
+                            libaryMarker(map, lb, 1);
+                        }
+                    )
+
                 } else {
                     lbs.publicLibary.map(
                         lb => {
-                            makeMarker(map, lb, 0);
+                            libaryMarker(map, lb, 0);
+                        }
+                    )
+                    lbs.specialLibary.map(
+                        lb => {
+                            specialLibaryMarker(map, lb, 0);
                         }
                     )
                 }
@@ -184,20 +260,143 @@
             apiData.data.map(
                 d => {
                     let city = d["縣市別"];
-                    $("#citys").append(`
+
+                    if (!(city == "2019-全國")) {
+                        $("#citys").append(`
                         <a class="dropdown-item" href="#">
-                            <input class="form-check-input" type="checkbox" name="citycheck" value="`+ city + `" onclick="showClick()">
-                            <label class="form-check-label" for="citycheck">` + city + `</label>
+                            <input class="form-check-input" type="checkbox" name="libaryCityCheck" value="`+ city + `" onclick="showNormalLibary()">
+                            <label class="form-check-label" for="libaryCityCheck">` + city + `</label>
                         </a>
                     `);
-                    d.publicLibary.map(
-                        lb => {
-                            makeMarker(map, lb, 3);
-                        }
-                    )
+                        d.publicLibary.map(
+                            lb => {
+                                libaryMarker(map, lb, 3);
+                            }
+                        )
+                        d.specialLibary.map(
+                            lb => {
+                                specialLibaryMarker(map, lb, 3);
+                            }
+                        )
+                    }
                 }
             )
         });
+    </script>
+    <!--這邊是要給顯示學校用的-->
+    <script>
+        let schoolMarkers = {};
+        function schoolMarker(sourceMap, data, action) {
+            if (action == 3) {
+                zIndexOffset = 0;
+                let locate = [data["地址"].advance.locate.lat, data["地址"].advance.locate.lng];
+                if (data.level == "大學") {
+                    iconUrl = "{{url_for('static', filename='images/university.png')}}";
+                    zIndexOffset = 995;
+                } else if (data.level == "高中職") {
+                    iconUrl = "{{url_for('static', filename='images/hischool.png')}}";
+                    zIndexOffset = 994;
+                } else if (data.level == "國中") {
+                    if (data.isLoseResource) {
+                        iconUrl = "{{url_for('static', filename='images/noResource.png')}}";
+                        zIndexOffset = 1000;
+                    } else {
+                        iconUrl = "{{url_for('static', filename='images/juschool.png')}}";
+                        zIndexOffset = 993;
+                    }
+                } else if (data.level == "國小") {
+                    if (data.isLoseResource) {
+                        iconUrl = "{{url_for('static', filename='images/noResource.png')}}";
+                        zIndexOffset = 1000;
+                    } else {
+                        iconUrl = "{{url_for('static', filename='images/elschool.png')}}";
+                        zIndexOffset = 992;
+                    }
+                }
+                let marker = L.marker(locate, {
+                    icon: L.icon({
+                        iconUrl: iconUrl,
+                    }),
+                    fileNo: data["學校名稱"],
+                    type: "school",
+                    zIndexOffset: zIndexOffset
+                });
+                schoolMarkers[data["學校名稱"]] = marker;
+            }
+            if (action == 1) {
+                sourceMap.addLayer(schoolMarkers[data["學校名稱"]]);
+            } else if (action == 0) {
+                sourceMap.removeLayer(schoolMarkers[data["學校名稱"]]);
+            } else {
+                //新增MARKER觸發
+                let r = "";
+                if (data.isLoseResource) {
+                    r = "這所學校是屬於" + data["地區屬性"] + "的學校！他們缺資源！"
+                }
+                schoolMarkers[data["學校名稱"]].on('click', function () {
+                    Swal.mixin({
+                        width: 600,
+                        padding: '3em',
+                        background: '#fff url(https://sweetalert2.github.io/images/trees.png)',
+                        showCancelButton: true,
+                        progressSteps: ['C'],
+                    }).queue([
+                        {
+                            title: data["學校名稱"],
+                            text: r + data["網址"],
+                        }
+                    ])
+                });
+            }
+
+        }
+        let schoolDatas = {};
+        let schoolCityWord = "";
+        let schoolLevelWord = "";
+        //看普通學校
+        function showNormalschool() {
+            schoolCityWord = "";
+            schoolLevelWord = "";
+            $('input:checkbox:checked[name="schoolCityCheck"]').each(
+                function () {
+                    schoolCityWord += this.value + ",";
+                }
+            );
+            $('input:checkbox:checked[name="schoolLevelCheck"]').each(
+                function () {
+                    schoolLevelWord += this.value + ",";
+                }
+            );
+            schoolDatas.data.map(lbs => {
+                if (schoolCityWord.indexOf(lbs["地址"].advance.locate.baddr2) > -1 && schoolLevelWord.indexOf(lbs["level"]) > -1) {
+                    schoolMarker(map, lbs, 1);
+                } else {
+                    schoolMarker(map, lbs, 0);
+                }
+            });
+        }
+        $.getJSON('/getSchools', function (apiData) {
+            console.log(apiData.status);
+            schoolDatas = apiData;
+            let water = {};
+            cityTmp = "";
+            apiData.data.map(
+                d => {
+                    let city = d["地址"].advance.locate.baddr2;
+                    if (cityTmp.indexOf(city) == -1) {
+                        $("#schools").append(`
+                        <a class="dropdown-item" href="#">
+                            <input class="form-check-input" type="checkbox" name="schoolCityCheck" value="`+ city + `" onclick="showNormalschool()">
+                            <label class="form-check-label" for="schoolCityCheck">` + city + `</label>
+                        </a>
+                    `);
+                    }
+                    cityTmp += city + ",";
+                    schoolMarker(map, d, 3);
+                }
+            )
+        });
+
     </script>
 </body>
 

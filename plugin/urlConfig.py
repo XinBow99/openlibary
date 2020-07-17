@@ -7,7 +7,7 @@ def csvToJson(data, header=2):
     p = p.content.decode('utf-8').strip().replace('\r', '').split('\n')
     header = p[header].split(',')
     d = []
-    for i in p[3:len(p)]:
+    for i in p[1:len(p)]:
         i = i.split(',')
         if len(i) != len(header):
             print('wtf')
@@ -36,7 +36,7 @@ highSchool = {
 junior = {
     'name': '國中資料集',
     'schools': "http://stats.moe.gov.tw/files/school/108/j1_new.csv",
-    'downloadData': csvToJson("http://stats.moe.gov.tw/files/school/108/j1_new.csv")
+    'downloadData': csvToJson("http://stats.moe.gov.tw/files/school/108/j1_new.csv",header=0)
 }
 # 國小
 elementary = {

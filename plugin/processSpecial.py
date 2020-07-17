@@ -48,7 +48,7 @@ def libaryCombie(debug=False):
 
     publicLibary = totalLibary.json()
     specialLibary = specialLibary.json()
-    #allLibary = libaryClass.json()
+    # allLibary = libaryClass.json()
 
     newKeyInfo = []
     for info in keyInfo.json():
@@ -66,13 +66,13 @@ def libaryCombie(debug=False):
             for i, area in enumerate(newKeyInfo):
                 checkCity = area['縣市別']
                 if lib[cityKey].split(' ')[0] in checkCity:
-                    #print(lib[cityKey].split(' ')[0])
+                    # print(lib[cityKey].split(' ')[0])
                     newKeyInfo[i][putKey].append(lib)
                 if checkCity == "2019-全國":
                     newKeyInfo[i]['allLibary'].append(lib)
     putLib(publicLibary, 'publicLibary', '所屬縣市')
     putLib(specialLibary, 'specialLibary', 'cityName')
-    #putLib(allLibary, 'allLibary', '所屬縣市')
+    # putLib(allLibary, 'allLibary', '所屬縣市')
 
     print("全國書館合併完成")
     return newKeyInfo
@@ -129,18 +129,28 @@ def schoolCombine(debug=False):
         print(data['name'], "合併中")
         if data['name'] == "國中資料集":
             for s in data['downloadData']:
+                flag = False
                 if s['學校名稱'] in lostDist:
                     if lostDist[s['學校名稱']]['本校代碼'] == s['代碼']:
+                        flag = True
                         del lostDist[s['學校名稱']]['本校代碼']
                         s.update(
                             lostDist[s['學校名稱']]
                         )
+                s.update(
+                    {'isLoseResource': flag}
+                )
+                s.update({
+                    'level': '國中'
+                })
                 schools.append(s)
+
             continue
         if str(data['downloadData'].status_code) == "200":
             for s in data['downloadData'].json():
                 flag = False
                 if data['name'] == "國小資料集":
+                    print(s)
                     if s['學校名稱'] in lostDist:
                         if '本校代碼' in lostDist[s['學校名稱']]:
                             if lostDist[s['學校名稱']]['本校代碼'] == s['代碼']:
@@ -158,6 +168,18 @@ def schoolCombine(debug=False):
                 s.update(
                     {'isLoseResource': flag}
                 )
+                if data['name'] == "高中職資料集":
+                    s.update({
+                        'level': '高中職'
+                    })
+                if data['name'] == "國小資料集":
+                    s.update({
+                        'level': '國小'
+                    })
+                if data['name'] == "大學資料集":
+                    s.update({
+                        'level': '大學'
+                    })
                 schools.append(s)
     o = open('convert.json', 'w', encoding='utf8')
     jsons = open('jsonFiles/schoolsNumber1.json', 'r',
